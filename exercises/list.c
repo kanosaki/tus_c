@@ -100,11 +100,11 @@ reverse_inner(cell* cel, cell* prev)
 {
     cell* next = cel->next;
     cel->next = prev;
-    if(next){
+    if(next)
         return reverse_inner(next, cel);
-    }else{
+    else 
         return cel;        
-    }
+
 }
 
 cell*
