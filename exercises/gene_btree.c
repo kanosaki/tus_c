@@ -3,7 +3,7 @@
 
 // Simplify printing.
 // Ex. (3, NULL, NULL) -> [3]
-#define ALTER_PRINTING
+#define ALTER_PRINTING 1
 
 typedef int item_t;
 
@@ -45,7 +45,7 @@ print_nodes_inner(node* target)
 {
     if(!target){
         printf("NULL");
-#ifdef ALTER_PRINTING
+#if ALTER_PRINTING
     }else if(!target->left && !target->right){
         printf("[");
         print_node_item(&target->item);
