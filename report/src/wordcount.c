@@ -6,6 +6,7 @@
 #include "crc.c"
 
 #define MAX_WORD_LENGTH 128
+#define TOKENIZED_SCAN 1
 
 /**
  *  'wt' is abbreviation of 'word table'
@@ -231,7 +232,11 @@ exit_error(char *msg){
 void
 aggregate_words(FILE* fp, word_table* table){
     char buffer[MAX_WORD_LENGTH];
+#if TOKENIZED_SCAN
+    while(scan_token(fp, buffer, MAX_WORD_LENGTH)){
+#else
     while(fscanf(fp, "%s", buffer) != EOF){
+#endif
         register_word(table, buffer);
     }
 }
@@ -271,7 +276,7 @@ main(int argc, const char *argv[])
     word_table* table = wt_create(capacity);
 
     read_file(argv[2], table);
-    wt_print_all(table);
+    printf("Foo\n");
     wt_print_bias(table);
     read_print_loop(table);
     
