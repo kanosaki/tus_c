@@ -4,6 +4,8 @@
 
 #include "crc.c"
 
+#define MAX_WORD_LENGTH 128
+
 /**
  *  'wt' is abbreviation of 'word table'
  *
@@ -27,8 +29,9 @@ word_hash(char* wd){
 word*
 word_create(char* value){
     word * ret = (word *)malloc(sizeof(word));
-    ret->str = value;
-    ret->count = 0;
+    ret->str = (char*)malloc(strlen(value));
+    strcpy(ret->str, value);
+    ret->count = 1;
     ret->next = NULL;
     return ret;
 }
@@ -53,6 +56,13 @@ wt_create(size_t capacity){
 static inline int
 wt_row_number(word_table* table, char* value){
     return word_hash(value) % table->table_length;
+}
+
+static int
+wt_row_length(word* row){
+    int ret;
+    for(ret = 0; row->next; row = row->next) ret++;
+    return ret;
 }
 
 // 渡された文字列を持つかも知れない列の先頭のword構造体を返します。
@@ -112,6 +122,30 @@ wt_push(word_table* table, char* value){
 }
 
 void
+wt_print_bias(word_table* table){
+    int row_num;
+    for(row_num = 0; row_num < table->table_length; row_num++){
+        printf("[%4d]: %d\n", row_num, wt_row_length(table->table[row_num]));
+    }
+}
+
+static void
+wt_print_row(word* wd){
+    if(!wd) return;
+    printf("\t<word:'%s' @count:%d >\n", wd->str, wd->count);
+    wt_print_row(wd->next);
+}
+
+void
+wt_print_all(word_table* table){
+    int row_num;
+    for(row_num = 0; row_num < table->table_length; row_num++){
+        printf("Row: [%d]\n", row_num);
+        wt_print_row(table->table[row_num]);
+    }
+}
+
+void
 register_word(word_table* table, char* value){
     word* prev = wt_find(table, value);
     if(prev) // Already exists
@@ -120,9 +154,64 @@ register_word(word_table* table, char* value){
         wt_push(table, value);
 }
 
+void
+print_usage(){
+    printf("Usage: wordcount table_length file\n");
+}
+
+void
+exit_error(char *msg){
+    fprintf(stderr, "%s\n", msg);
+    exit(-1);
+}
+
+void
+aggregate_words(FILE* fp, word_table* table){
+    char buffer[MAX_WORD_LENGTH];
+    while(fscanf(fp, "%s", buffer) != EOF){
+        register_word(table, buffer);
+    }
+}
+
+void 
+read_file(const char* filename, word_table *table){
+    FILE *fp = fopen(filename, "r");
+    if(!fp) exit_error("Cannot open file");
+    aggregate_words(fp, table);
+    fclose(fp);
+}
+
+void 
+read_print_loop(word_table* table){
+    char buffer[MAX_WORD_LENGTH];
+    printf("Word > ");
+    while(scanf("%s", buffer) != EOF){
+        word* wd = wt_find(table, buffer);
+        if(wd){
+            printf("%s: %d\n", wd->str, wd->count);
+        } else {
+            printf("%s was not found\n", buffer);
+        }
+        printf("Word > ");
+    }
+}
+
 int
 main(int argc, const char *argv[])
 {
+    if(argc != 3){
+        print_usage();
+        exit(1);
+    }
+
+    size_t capacity = atoi(argv[1]);
+    word_table* table = wt_create(capacity);
+
+    read_file(argv[2], table);
+    wt_print_all(table);
+    wt_print_bias(table);
+    read_print_loop(table);
+    
     return 0;
 }
 
