@@ -14,6 +14,7 @@
  *      ->table (array of )
  */
 
+/* word {{{*/
 typedef struct WORD_T {
     char *str;
     int count;
@@ -35,7 +36,9 @@ word_create(char* value){
     ret->next = NULL;
     return ret;
 }
+/*}}}*/
 
+/* table {{{*/
 // ハッシュテーブル本体の定義
 typedef struct TABLE_T {
     word **table;
@@ -144,6 +147,7 @@ wt_print_all(word_table* table){
         wt_print_row(table->table[row_num]);
     }
 }
+/*}}}*/
 
 void
 register_word(word_table* table, char* value){
