@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "crc.c"
 
@@ -148,6 +149,64 @@ wt_print_all(word_table* table){
     }
 }
 /*}}}*/
+
+
+bool word_char_table[0xFF];
+bool is_word_char_inited = false;
+char special_word_chars[] = { '-', '_' };
+
+
+static void
+init_word_char_table(){
+    // Numbers
+    char c;
+    for(c = '0'; c <= '9'; c++)
+        word_char_table[c] = true;
+    for(c = 'a'; c <= 'z'; c++)
+        word_char_table[c] = true;
+    for(c = 'A'; c <= 'Z'; c++)
+        word_char_table[c] = true;
+    int i;
+    for(i = 0; i < sizeof(special_word_chars) / sizeof(char); i++){
+        word_char_table[special_word_chars[i]] = true;
+    }
+}
+
+static inline bool
+is_word_char(char c){
+    return word_char_table[c];
+}
+
+int
+scan_token(FILE* fp, char* out, size_t limit){
+    if (!is_word_char_inited) init_word_char_table();
+    size_t read = 0;
+    char c;
+    bool is_overflowed = false;
+    while(1){
+        if(read > limit - 1 && !is_overflowed){
+            fprintf(stderr, "WARNING: Token buffer overflow\n");
+            is_overflowed = true;
+        }
+        if((c = fgetc(fp)) != EOF && is_word_char(c)){
+            if(!is_overflowed){
+                *out = c;
+                read++;
+                out++;
+            }
+        }
+        else
+            break;
+    }
+    *out = 0;
+    while((c = fgetc(fp)) != EOF){
+        if(is_word_char(c)){
+            ungetc(c, fp);
+            break;
+        }
+    }
+    return read;
+}
 
 void
 register_word(word_table* table, char* value){
