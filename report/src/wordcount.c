@@ -7,6 +7,13 @@
 
 #define MAX_WORD_LENGTH 128
 #define TOKENIZED_SCAN 1
+/*
+ * Avaivable hash functions:
+ *  crc_string
+ *  hash_simple_sum
+ *  hash_simple_product
+ */
+#define HASH_FUNCTION crc_string
 
 /**
  *  'wt' is abbreviation of 'word table'
@@ -23,9 +30,23 @@ typedef struct WORD_T {
     struct WORD_T *next;
 } word;
 
+static int
+hash_simple_sum(char* wd){
+    int ret;
+    for(ret = 0; *wd; wd++) ret += *wd;
+    return ret;
+}
+
+static int
+hash_simple_product(char* wd){
+    int ret;
+    for(ret = 1; *wd; wd++) ret *= *wd;
+    return ret;
+}
+
 int
 word_hash(char* wd){
-    return crc_string(wd);
+    return HASH_FUNCTION(wd);
 }
 
 // 新しいword構造体を構成します
@@ -59,7 +80,7 @@ wt_create(size_t capacity){
 
 static inline word*
 wt_row(word_table* table, int row_num){
-    return table->table[row_number];
+    return table->table[row_num];
 }
 
 // 文字列のテーブルにおける実際の配列の添え字を計算します
@@ -141,9 +162,13 @@ wt_print_bias(word_table* table){
 
 static void
 wt_print_row(word* wd){
-    if(!wd) return;
-    printf("\t<word:'%s' @count:%d >\n", wd->str, wd->count);
-    wt_print_row(wd->next);
+    int col = 0;
+    while(wd){
+        printf("'%-15.15s'@%4d ", wd->str, wd->count);
+        col++;
+        if(col == 4){ printf("\n"); col = 0; }
+        wd = wd->next;
+    }
 }
 
 void
@@ -152,6 +177,7 @@ wt_print_all(word_table* table){
     for(row_num = 0; row_num < table->table_length; row_num++){
         printf("Row: [%d]\n", row_num);
         wt_print_row(wt_row(table, row_num));
+        printf("\n");
     }
 }
 /*}}}*/
@@ -281,7 +307,7 @@ main(int argc, const char *argv[])
     word_table* table = wt_create(capacity);
 
     read_file(argv[2], table);
-    printf("Foo\n");
+    wt_print_all(table);
     wt_print_bias(table);
     read_print_loop(table);
     
