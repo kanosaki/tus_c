@@ -57,6 +57,11 @@ wt_create(size_t capacity){
     return table;
 }
 
+static inline word*
+wt_row(word_table* table, int row_num){
+    return table->table[row_number];
+}
+
 // 文字列のテーブルにおける実際の配列の添え字を計算します
 static inline int
 wt_row_number(word_table* table, char* value){
@@ -66,7 +71,7 @@ wt_row_number(word_table* table, char* value){
 static int
 wt_row_length(word* row){
     int ret;
-    for(ret = 0; row->next; row = row->next) ret++;
+    for(ret = 0; row; row = row->next) ret++;
     return ret;
 }
 
@@ -75,7 +80,7 @@ wt_row_length(word* row){
 static inline word*
 wt_find_row(word_table* table, char* value){
     int row_number = wt_row_number(table, value);
-    return table->table[row_number];
+    return wt_row(table, row_number);
 }
 
 // 指定された文字列を持つかもしれない列を線形的に検索します。
@@ -130,7 +135,7 @@ void
 wt_print_bias(word_table* table){
     int row_num;
     for(row_num = 0; row_num < table->table_length; row_num++){
-        printf("[%4d]: %d\n", row_num, wt_row_length(table->table[row_num]));
+        printf("[%4d]: %d\n", row_num, wt_row_length(wt_row(table, row_num)));
     }
 }
 
@@ -146,7 +151,7 @@ wt_print_all(word_table* table){
     int row_num;
     for(row_num = 0; row_num < table->table_length; row_num++){
         printf("Row: [%d]\n", row_num);
-        wt_print_row(table->table[row_num]);
+        wt_print_row(wt_row(table, row_num));
     }
 }
 /*}}}*/
@@ -258,7 +263,7 @@ read_print_loop(word_table* table){
         if(wd){
             printf("%s: %d\n", wd->str, wd->count);
         } else {
-            printf("%s was not found\n", buffer);
+            printf("'%s' was not found\n", buffer);
         }
         printf("Word > ");
     }
