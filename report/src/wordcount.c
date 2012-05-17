@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "crc.c"
 
@@ -154,10 +155,27 @@ wt_push(word_table* table, char* value){
 
 void
 wt_print_bias(word_table* table){
-    int row_num;
-    for(row_num = 0; row_num < table->table_length; row_num++){
-        printf("[%4d]: %d\n", row_num, wt_row_length(wt_row(table, row_num)));
+    int len_table[table->table_length];
+    int row_num = 0, col = 0, sum = 0;
+    double average = 0.0, variance = 0.0;
+    for(; row_num < table->table_length; row_num++){
+        int count = wt_row_length(wt_row(table, row_num));
+        len_table[row_num] = count;
+        sum += count;
+        printf("[%4d]: %4d| ", row_num, count);
+        col++;
+        if(col == 4){
+            printf("\n");
+            col = 0;
+        }
     }
+    if(col) printf("\n");
+    average = ((double)sum) / row_num;
+    for (row_num = 0; row_num < table->table_length; row_num++) {
+        variance += pow(average - len_table[row_num], 2.0);
+    }
+    variance /= row_num; // Sample variance
+    printf("Count: %d, Average: %f, Variance: %f SD: %f \n", row_num, average, variance, sqrt(variance));
 }
 
 static void
