@@ -14,7 +14,7 @@
  *  hash_simple_sum
  *  hash_simple_product
  */
-#define HASH_FUNCTION crc_string
+#define DEFAULT_HASH_FUNCTION hash_crc
 
 /**
  *  'wt' is abbreviation of 'word table'
@@ -66,6 +66,11 @@ typedef struct WORD_T {
 } word;
 
 static int
+hash_crc(char* wd){
+    return crc_string(wd);
+}
+
+static int
 hash_simple_sum(char* wd){
     int ret;
     for(ret = 0; *wd; wd++) ret += *wd;
@@ -77,11 +82,6 @@ hash_simple_product(char* wd){
     int ret;
     for(ret = 1; *wd; wd++) ret *= *wd;
     return ret;
-}
-
-int
-word_hash(char* wd){
-    return HASH_FUNCTION(wd);
 }
 
 // 新しいword構造体を構成します
@@ -112,7 +112,7 @@ wt_create(size_t capacity){
     table->table_length = capacity;
     table->items_count = 0;
     table->table = (word **)calloc(capacity, sizeof(word));
-    table->hash_function = crc_string;
+    table->hash_function = DEFAULT_HASH_FUNCTION;
     return table;
 }
 
@@ -124,7 +124,7 @@ wt_row(word_table* table, int row_num){
 // 文字列のテーブルにおける実際の配列の添え字を計算します
 static inline int
 wt_row_number(word_table* table, char* value){
-    return word_hash(value) % table->table_length;
+    return table->hash_function(value) % table->table_length;
 }
 
 static int
@@ -355,11 +355,10 @@ read_print_loop(word_table* table){
 int
 main(int argc, const char *argv[])
 {
-    if(argc != 3){
+    if(argc < 3){
         print_usage();
         exit(1);
     }
-
     size_t capacity = atoi(argv[1]);
     word_table* table = wt_create(capacity);
 
