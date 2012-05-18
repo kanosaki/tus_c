@@ -24,7 +24,41 @@
  *      ->table (array of )
  */
 
-/* word {{{*/
+// Mecellaneous functions/*{{{*/
+void
+print_usage(){
+    printf("Usage: wordcount table_length file\n");
+}
+
+void
+exit_error(char *msg){
+    fprintf(stderr, "%s\n", msg);
+    exit(-1);
+}
+/*}}}*/
+// Statistics functions/*{{{*/
+
+static double
+int_list_summation(int* values, int len){
+    int i = 0;
+    double ret = 0.0;
+    for(;i < len; i++){
+        ret += values[i];
+    }
+    return ret;
+}
+
+static double
+int_list_unbiased_variance(int* values, int len, double average){
+    int i = 0;
+    double delta_sum = 0.0;
+    for(; i < len; i++){
+        delta_sum += pow(average - values[i], 2);
+    }
+    return delta_sum / (len - 1);
+}
+/*}}}*/
+/* word functions {{{*/
 typedef struct WORD_T {
     char *str;
     int count;
@@ -61,8 +95,7 @@ word_create(char* value){
     return ret;
 }
 /*}}}*/
-
-/* table {{{*/
+/* word_table functions {{{*/
 // ハッシュテーブル本体の定義
 typedef struct TABLE_T {
     word **table;
@@ -153,29 +186,39 @@ wt_push(word_table* table, char* value){
         wt_row_push(row_root, wd);
 }
 
-void
-wt_print_bias(word_table* table){
-    int len_table[table->table_length];
-    int row_num = 0, col = 0, sum = 0;
-    double average = 0.0, variance = 0.0;
+static void
+wt_row_summary(word_table* table, int* result){
+    int row_num = 0;
     for(; row_num < table->table_length; row_num++){
-        int count = wt_row_length(wt_row(table, row_num));
-        len_table[row_num] = count;
-        sum += count;
-        printf("[%4d]: %4d| ", row_num, count);
+        result[row_num] = wt_row_length(wt_row(table, row_num));
+    }
+}
+
+static void
+wt_print_summary_table(int* table, int len, int column){
+    int i = 0, col = 0;
+    for(; i < len; i++){
+        printf("[%4d]: %4d| ", i, table[i]);
         col++;
-        if(col == 4){
+        if(col == column){
             printf("\n");
             col = 0;
         }
     }
     if(col) printf("\n");
-    average = ((double)sum) / row_num;
-    for (row_num = 0; row_num < table->table_length; row_num++) {
-        variance += pow(average - len_table[row_num], 2.0);
-    }
-    variance /= row_num; // Sample variance
-    printf("Count: %d, Average: %f, Variance: %f SD: %f \n", row_num, average, variance, sqrt(variance));
+}
+
+void
+wt_print_bias(word_table* table){
+    int len = table->table_length;
+    int len_table[len];
+    double average = 0.0, variance = 0.0;
+    wt_row_summary(table, len_table);
+    wt_print_summary_table(len_table, len, 4);
+    average = int_list_summation(len_table, len) / len;
+    variance = int_list_unbiased_variance(len_table, len, average);
+    printf("Count: %d, Average: %f, Variance: %f SD: %f \n", 
+            len, average, variance, sqrt(variance));
 }
 
 static void
@@ -199,12 +242,11 @@ wt_print_all(word_table* table){
     }
 }
 /*}}}*/
-
+// Input tokenizer/*{{{*/
 
 bool word_char_table[0xFF];
 bool is_word_char_inited = false;
 char special_word_chars[] = { '-', '_' };
-
 
 static void
 init_word_char_table(){
@@ -257,7 +299,8 @@ scan_token(FILE* fp, char* out, size_t limit){
     }
     return read;
 }
-
+/*}}}*/
+// Input file handers/*{{{*/
 void
 register_word(word_table* table, char* value){
     word* prev = wt_find(table, value);
@@ -267,16 +310,6 @@ register_word(word_table* table, char* value){
         wt_push(table, value);
 }
 
-void
-print_usage(){
-    printf("Usage: wordcount table_length file\n");
-}
-
-void
-exit_error(char *msg){
-    fprintf(stderr, "%s\n", msg);
-    exit(-1);
-}
 
 void
 aggregate_words(FILE* fp, word_table* table){
@@ -313,6 +346,7 @@ read_print_loop(word_table* table){
     }
 }
 
+/*}}}*/
 int
 main(int argc, const char *argv[])
 {
