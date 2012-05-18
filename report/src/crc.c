@@ -7,7 +7,7 @@
 #define POLY 0xEDB88320UL
 
 typedef uint8_t byte;
-typedef uint32_t crc_t;
+typedef int crc_t;
 
 uint64_t crc_table[0xFF];
 bool crc_table_is_inited = false;

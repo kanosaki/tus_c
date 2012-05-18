@@ -101,6 +101,7 @@ typedef struct TABLE_T {
     word **table;
     size_t table_length;
     size_t items_count;
+    int (*hash_function)(char* data);
 } word_table;
 
 
@@ -111,6 +112,7 @@ wt_create(size_t capacity){
     table->table_length = capacity;
     table->items_count = 0;
     table->table = (word **)calloc(capacity, sizeof(word));
+    table->hash_function = crc_string;
     return table;
 }
 
@@ -249,12 +251,12 @@ wt_print_all(word_table* table){
 
 bool word_char_table[0xFF];
 bool is_word_char_inited = false;
-char special_word_chars[] = { '-', '_' };
+int special_word_chars[] = { '-', '_' };
 
 static void
 init_word_char_table(){
     // Numbers
-    char c;
+    int c;
     for(c = '0'; c <= '9'; c++)
         word_char_table[c] = true;
     for(c = 'a'; c <= 'z'; c++)
@@ -269,7 +271,7 @@ init_word_char_table(){
 
 static inline bool
 is_word_char(char c){
-    return word_char_table[c];
+    return word_char_table[(int)c];
 }
 
 int
