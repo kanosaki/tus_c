@@ -101,7 +101,7 @@ typedef struct TABLE_T {
     word **table;
     size_t table_length;
     size_t items_count;
-    int (*hash_function)(char* data);
+    int (*hash_function)(char*);
 } word_table;
 
 
@@ -112,7 +112,7 @@ wt_create(size_t capacity){
     table->table_length = capacity;
     table->items_count = 0;
     table->table = (word **)calloc(capacity, sizeof(word));
-    table->hash_function = DEFAULT_HASH_FUNCTION;
+    table->hash_function = &DEFAULT_HASH_FUNCTION;
     return table;
 }
 
