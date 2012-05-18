@@ -100,6 +100,7 @@ word_create(char* value){
 typedef struct TABLE_T {
     word **table;
     size_t table_length;
+    size_t items_count;
 } word_table;
 
 
@@ -108,6 +109,7 @@ word_table*
 wt_create(size_t capacity){
     word_table* table = (word_table *)malloc(sizeof(word_table));
     table->table_length = capacity;
+    table->items_count = 0;
     table->table = (word **)calloc(capacity, sizeof(word));
     return table;
 }
@@ -184,6 +186,7 @@ wt_push(word_table* table, char* value){
         wt_row_new(table, wd);
     else 
         wt_row_push(row_root, wd);
+    table->items_count += 1;
 }
 
 static void
@@ -195,7 +198,7 @@ wt_row_summary(word_table* table, int* result){
 }
 
 static void
-wt_print_summary_table(int* table, int len, int column){
+wt_print_table_length_summary(int* table, int len, int column){
     int i = 0, col = 0;
     for(; i < len; i++){
         printf("[%4d]: %4d| ", i, table[i]);
@@ -214,10 +217,10 @@ wt_print_bias(word_table* table){
     int len_table[len];
     double average = 0.0, variance = 0.0;
     wt_row_summary(table, len_table);
-    wt_print_summary_table(len_table, len, 4);
+    wt_print_table_length_summary(len_table, len, 4);
     average = int_list_summation(len_table, len) / len;
     variance = int_list_unbiased_variance(len_table, len, average);
-    printf("Count: %d, Average: %f, Variance: %f SD: %f \n", 
+    printf("Table Count: %d, Average: %f, Variance: %f SD: %f \n", 
             len, average, variance, sqrt(variance));
 }
 
@@ -359,8 +362,9 @@ main(int argc, const char *argv[])
     word_table* table = wt_create(capacity);
 
     read_file(argv[2], table);
-    wt_print_all(table);
+    // wt_print_all(table);
     wt_print_bias(table);
+    printf("All words: %zd\n", table->items_count);
     read_print_loop(table);
     
     return 0;
