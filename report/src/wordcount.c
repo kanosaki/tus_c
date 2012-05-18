@@ -94,6 +94,13 @@ word_create(char* value){
     ret->next = NULL;
     return ret;
 }
+
+void
+word_free(word* wd){
+    word* next = wd->next;
+    free(wd->str);
+    if(next) word_free(next);
+}
 /*}}}*/
 /* word_table functions {{{*/
 // ハッシュテーブル本体の定義
@@ -245,6 +252,15 @@ wt_print_all(word_table* table){
         wt_print_row(wt_row(table, row_num));
         printf("\n");
     }
+}
+
+void
+wt_free(word_table* table){
+    int i;
+    for (i = 0; i < table->table_length; i++) {
+        word_free(wt_row(table, i));
+    }
+    free(table);
 }
 /*}}}*/
 // Input tokenizer/*{{{*/
