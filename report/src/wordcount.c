@@ -383,7 +383,7 @@ main(int argc, const char *argv[])
     wt_print_bias(table);
     printf("All words: %zd\n", table->items_count);
     read_print_loop(table);
-    
+    wt_free(table);
     return 0;
 }
 
