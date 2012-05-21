@@ -16,6 +16,19 @@
  */
 #define DEFAULT_HASH_FUNCTION hash_crc
 
+#define WT_FOREACH(table, elem, statements) do {\
+        int _row_num;\
+        for(_row_num = 0; _row_num < table->table_length; _row_num++){\
+            word* elem = wt_row(table, _row_num);\
+            while(elem){\
+                statements;\
+                elem = elem->next;\
+            }\
+        }\
+    }while(0)
+
+
+
 /**
  *  'wt' is abbreviation of 'word table'
  *
@@ -186,16 +199,24 @@ wt_find(word_table* table, char* value){
     return wt_row_seek(row_root, value);
 }
 
-// テーブルに新しく文字列をもつword構造体を構成し、追加します。
-void
-wt_push(word_table* table, char* value){
-    word *wd = word_create(value);
-    word *row_root = wt_find_row(table, value);
+static void
+wt_push_word(word_table* table, word* wd){
+    word *row_root = wt_find_row(table, wd->str);
     if(!row_root)
         wt_row_new(table, wd);
     else 
         wt_row_push(row_root, wd);
     table->items_count += 1;
+}
+
+// テーブルに新しく文字列をもつword構造体を構成し、追加します。
+word*
+wt_push(word_table* table, char* value){
+    word *prev = wt_find(table, value);
+    if(prev) return prev;
+    word *wd = word_create(value);
+    wt_push_word(table, wd);
+    return wd;
 }
 
 static void
@@ -261,6 +282,19 @@ wt_free(word_table* table){
         word_free(wt_row(table, i));
     }
     free(table);
+}
+
+static void
+wt_copy(word_table* src, word_table* dst){
+    WT_FOREACH(src, wd, wt_push_word(dst, wd));
+}
+
+word_table*
+wt_rebuild(word_table* src, size_t newsize){
+    word_table* newtable = wt_create(newsize);
+    wt_copy(src, newtable);
+    wt_free(src);
+    return newtable;
 }
 /*}}}*/
 // Input tokenizer/*{{{*/
